@@ -15,15 +15,13 @@ from keys.keys import oauth_token, oauth_client_id
 # Указываем путь к JSON
 gc = gspread.service_account(filename='keys/mypython-374908-4480952f882c.json')
 
-campaignIdArray = ['49039988', '48371734', '48429880', '46655497']
-
+# Заголовки запроса к Яндексу
 HEADERS = {
     'Authorization': f'OAuth oauth_token="{oauth_token}", oauth_client_id="{oauth_client_id}"',
     'Content-Type': 'application/json'
 }
 
-gidListArray = [339962401, 339962401, 1481585305, 2138399644]
-
+# Массив ['листGS', 'campaingId']
 campaignIdArray = [
     [263414250, '49039988'],
     # [339962401, '48371734'],
@@ -31,34 +29,38 @@ campaignIdArray = [
     # [2138399644, '46655497']
 ]
 
+# Пробегаю по каждому магазину и листуGS
 for campaingId in campaignIdArray:
 
-    print(campaingId[0])
-    print(campaingId[1])
-
+    # Вывожу Лист и Кампанию
+    print('= = = = = = = = = = = = = = = ')
+    print('ЛистGS:', campaingId[0])
+    print('СampaingId:', campaingId[1])
 
     # Получаю первый лист из которого вытяну сколько всего страниц и 1-50 заказы
     response1 = requests.get(
-            'https://api.partner.market.yandex.ru/v2/campaigns/' + str(campaingId[1]) + '/orders.json?page=1',
+            'https://api.partner.market.yandex.ru/v2/campaigns/' + str(campaingId[1]) + '/orders.json?page=2',
             headers=HEADERS
     ).json()
 
-    print("Всего заказов: ", response1['pager']['total'])
+    print("\nВсего заказов: ", response1['pager']['total'])
     print("Всего страниц: ", response1['pager']['pagesCount'])
+
+    # Количество страниц в ответе
     pagesCount = response1['pager']['pagesCount']
-    all_data = response1['orders']
+    # Переменная в которую соберу все заказы из всех страниц
+    data = response1['orders']
 
     # Тут цикл в котором я забираю вообще все заказы с маркета
-
     # if pagesCount > 1:
     #     for i in range(2, pagesCount+1):
     #         response = requests.get(
     #             'https://api.partner.market.yandex.ru/v2/campaigns/' + campaingId[1] + '/orders.json?page' + str(i),
     #             headers=HEADERS
     #         ).json()
-    #         all_data = all_data + response['orders']
-    data = all_data
+    #         data = data + response['orders']
 
+    # ДатаФрейм
     df = pd.json_normalize(
             data, 
             max_level=5,
@@ -94,60 +96,42 @@ for campaingId in campaignIdArray:
     # dict_flattened = (flatten(record, '.') for record in data)
     # df = pd.DataFrame(dict_flattened)
 
-    # qwer = str(df.at[3, 'delivery.shipments'])
-    # s = qwer.replace("\'", "\"")
-    # data_qwer = json.loads(s)
-    # print(data_qwer['shipmentDate'])
-    # df.at[3, 'delivery.shipments'] = data_qwer['shipmentDate']
+    # Все NaN меняет на 0
+    # df.fillna(0)
 
-    # df['id'] = df['id'].astype( str )
-
-    df.fillna(0)
-
-    def eerrrr(q):
-        w = str(q)
-        print (w)
-        rgfd = w.replace("\'", "\"")
-        print (rgfd)
-        data_qwer = json.loads(rgfd)
-        date_sh = data_qwer['shipmentDate']
-        sdjkh = date_sh.replace("-", ".")
-        print("вылдфовоылодлвфыодлоывлдофывлдодлвы   ",sdjkh)
-        return sdjkh
+    # Преобразую в json и вытягиваю shipmentDate
+    def get_delivery_shipmentDate(shipmentDate):
+        shipmentDate = str(shipmentDate).replace("\'", "\"")
+        shipmentDate_data = json.loads(shipmentDate)
+        shipmentDate_value = shipmentDate_data['shipmentDate']
+        return shipmentDate_value
     
-    def eerrrr2(q):
-        print(type(q))
-        if pd.isna(q):
-            print('dlksajdl;hjlkjdfhlksadhflkjhgdslkjfhlkjsdgalkfjglsdjkhfljhk')
-            return ''
+    # Преобразую в json и вытягиваю amount
+    def get_subsidies_amount(amount):
+        if pd.isna(amount):
+            return 0
         else:
-            w = str(q)
-            print('dlksajdl;hjlkjdfhlksadhflkjhgdslkjfhlkjsdgalkfjglsdjkhfljhk',w)
-            print (w)
-            rgfd = w.replace("\'", "\"")
-            qweweqwe =  rgfd.replace("[", "")
-            asfasfsfafaf = qweweqwe.replace("]", "")
-            print (asfasfsfafaf)
-            data_qwer2 = json.loads(asfasfsfafaf)
-            date_sh = data_qwer2['amount']
-            print("вылдфовоылодлвфыодлоывлдофывлдодлвы   ",date_sh)
-            return date_sh
+            amount = str(amount).replace("\'", "\"").replace("[", "").replace("]", "")
+            amount_data = json.loads(amount)
+            amount_value = amount_data['amount']
+            return amount_value
 
+    # Количество строк в ДФ
     num_rows = df.shape[0]
 
+    # Цикл в котором преобразую весь столбец delivery.shipments
     for i in range(num_rows):
-        df.at[i, 'delivery.shipments'] = eerrrr(df.at[i, 'delivery.shipments'])
+        df.at[i, 'delivery.shipments'] = get_delivery_shipmentDate(df.at[i, 'delivery.shipments'])
 
+    # Цикл в котором преобразую весь столбец subsidies
     for i in range(num_rows):
-        df.at[i, 'subsidies'] = eerrrr2(df.at[i, 'subsidies'])
+        df.at[i, 'subsidies'] = get_subsidies_amount(df.at[i, 'subsidies'])
 
-
-    # df['id'] = df['id'].replace("id", "asdasdasda")
-
-    # print(df.head())
-
+    # Получаю названия колонок из ДФ
     columnInData = list(df.columns.values)
-    print(columnInData)
+    print("\nВсе колонки в ДФ: \n", columnInData)
+
+    # Колонки, которые удалю
     needDrop = [
         '_vat',
         '_partnerWarehouseId',
@@ -162,12 +146,14 @@ for campaingId in campaignIdArray:
         '_id'
     ]
 
-    result = list(set(columnInData) & set(needDrop))
-    print(result)
-
-    print(df.head())
+    # Если попробую удалить столбец, которого нет в ДФ, будет ошибка
+    # Поэтому делаю массив, в котором будут только те колонки, которые нужно удалить и они есть в ДФ
+    result_needDrop = list(set(columnInData) & set(needDrop))
+    print("\nЭти колонки удаляю: \n", result_needDrop)
+    
+    # Удаляю колонки 
     df.drop(
-        columns = result,
+        columns = result_needDrop,
         axis = 1, 
         inplace=True
     )
@@ -212,20 +198,10 @@ for campaingId in campaignIdArray:
             'subsidies',
         ]
     )
+
     # Переводим заголовки на русский
     df_new.rename(
         columns = {
-            # 'id':'Идентификатор заказа', 
-            # 'creationDate':'Дата и время оформления заказа',
-            # '_shopSku':'Ваш SKU',
-            # '_offerName':'Название товара',
-            # '_count':'Количество товара',
-            # '_price':'Цена товара',
-            # 'status':'Статус заказа',
-            # 'substatus':'Этап обработки заказа',
-            # 'paymentType':'Тип оплаты заказа',
-
-
             'id':'Идентификатор заказа',
             'status':'Статус заказа',
             'substatus':'Этап обработки заказа',
@@ -253,6 +229,10 @@ for campaingId in campaignIdArray:
             }, 
         inplace = True 
     )
+
+    print('\nDataFrame:')
+    print(df_new.head())
+
     # Заливаем DataFrame в гугл таблицу
     set_with_dataframe(worksheet, df_new)
     time.sleep(3)
