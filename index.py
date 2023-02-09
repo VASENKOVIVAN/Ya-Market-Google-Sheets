@@ -39,7 +39,7 @@ for campaingId in campaignIdArray:
 
     # Получаю первый лист из которого вытяну сколько всего страниц и 1-50 заказы
     response1 = requests.get(
-            'https://api.partner.market.yandex.ru/v2/campaigns/' + str(campaingId[1]) + '/orders.json?page=2',
+            'https://api.partner.market.yandex.ru/v2/campaigns/' + str(campaingId[1]) + '/orders.json?page=1',
             headers=HEADERS
     ).json()
 
@@ -52,13 +52,14 @@ for campaingId in campaignIdArray:
     data = response1['orders']
 
     # Тут цикл в котором я забираю вообще все заказы с маркета
-    # if pagesCount > 1:
-    #     for i in range(2, pagesCount+1):
-    #         response = requests.get(
-    #             'https://api.partner.market.yandex.ru/v2/campaigns/' + campaingId[1] + '/orders.json?page' + str(i),
-    #             headers=HEADERS
-    #         ).json()
-    #         data = data + response['orders']
+    if pagesCount > 1:
+        for i in range(2, pagesCount+1):
+            response2 = requests.get(
+                'https://api.partner.market.yandex.ru/v2/campaigns/' + campaingId[1] + '/orders.json?page=' + str(i),
+                headers=HEADERS
+            ).json()
+            # print("ВОТ ЭТО ХУЕТА ",response2)
+            data = data + response2['orders']
 
     # ДатаФрейм
     df = pd.json_normalize(
@@ -151,7 +152,7 @@ for campaingId in campaignIdArray:
     result_needDrop = list(set(columnInData) & set(needDrop))
     print("\nЭти колонки удаляю: \n", result_needDrop)
     
-    # Удаляю колонки 
+    # # Удаляю колонки 
     df.drop(
         columns = result_needDrop,
         axis = 1, 
@@ -240,7 +241,7 @@ for campaingId in campaignIdArray:
     # Закрепляем первую строку
     set_frozen(worksheet, rows=1)
 
-    set_row_height(worksheet, '1', 40)
+    set_row_height(worksheet, '1', 50)
     set_row_height(worksheet, '2:1000', 22)
 
     # Переменная со стилями для строки заголовков
@@ -293,34 +294,142 @@ for campaingId in campaignIdArray:
     # }
 
     # sh.batch_update(body)
-    
-    # requests1 = []
-    # Ширина столбцов
-    set_column_width(worksheet, 'A', 120) # Идентификатор заказа
-    set_column_width(worksheet, 'B', 140) # Дата и время оформления заказа
-    set_column_width(worksheet, 'C', 110) # Ваш SKU
-    set_column_width(worksheet, 'D', 310) # Название товара
-    set_column_width(worksheet, 'E', 90) # Количество товара
-    set_column_width(worksheet, 'F', 60) # Цена товара
-    set_column_width(worksheet, 'G', 90) # Статус заказа
-    set_column_width(worksheet, 'H', 120) # Статус заказа
-    set_column_width(worksheet, 'I', 90) # Статус заказа
 
 
 
-    body2 = {
-        'requests': {
-            "autoResizeDimensions": {
-                "dimensions": {
-                    "sheetId": campaingId[0],
-                    "dimension": "ROWS",
-                }
+
+    body = {
+        'requests': 
+            # Задать ширину столбца A: 317 пикселей
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": campaingId[0],
+                        "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+                        "startIndex": 0,         # Столбцы нумеруются с нуля
+                        "endIndex": 25            # startIndex берётся включительно, endIndex - НЕ включительно,
+                    },
+                    "properties": {
+                        "pixelSize": 120     # размер в пикселях
+                    },
+                    "fields": "pixelSize"  # нужно задать только pixelSize и не трогать другие параметры столбца
+                },
             },
-        }
     }
-    sh.batch_update(body2)
+
+    sh.batch_update(body)
+    
+    requests1 = []
+
+    # Ширина столбцов
+    # set_column_width(worksheet, 'A', 120) # 'id':'Идентификатор заказа',
+    # set_column_width(worksheet, 'B', 120) # 'status':'Статус заказа',
+    # set_column_width(worksheet, 'C', 120) # 'substatus':'Этап обработки заказа',
+    # set_column_width(worksheet, 'D', 90) # 'creationDate':'Дата и время оформления заказа',
+    # set_column_width(worksheet, 'E', 90) # 'itemsTotal':'Стоимость всех товаров в заказе в валюте магазина',
+    # set_column_width(worksheet, 'F', 90) # 'total':'Стоимость всех товаров в заказе в валюте магазина',
+    # set_column_width(worksheet, 'G', 90) # 'deliveryTotal':'Стоимость доставки в валюте заказа',
+    # set_column_width(worksheet, 'H', 90) # 'subsidyTotal':'Общее вознаграждение партнеру за скидки по всем товарам в заказе',
+    # set_column_width(worksheet, 'I', 90) # 'totalWithSubsidy':'Сумма стоимости всех товаров в заказе и вознаграждения за них в валюте магазина (сумма параметров total и subsidyTotal)',
+    # set_column_width(worksheet, 'J', 90) # 'buyerItemsTotal':'Стоимость всех товаров в заказе в валюте покупателя',
+    # set_column_width(worksheet, 'K', 90) # 'buyerTotal':'Стоимость всех товаров в заказе в валюте покупателя',
+    # set_column_width(worksheet, 'L', 90) # 'buyerItemsTotalBeforeDiscount':'Стоимость всех товаров в заказе в валюте покупателя',
+    # set_column_width(worksheet, 'M', 90) # 'buyerTotalBeforeDiscount':'Стоимость всех товаров в заказе в валюте покупателя',
+    # set_column_width(worksheet, 'N', 90) # 'paymentType':'Тип оплаты заказа',
+    # set_column_width(worksheet, 'O', 90) # 'paymentMethod':'Способ оплаты заказа',
+    # set_column_width(worksheet, 'P', 90) # '_offerName':'Название товара',
+    # set_column_width(worksheet, 'Q', 90) # '_buyerPrice':'Цена товара в валюте покупателя. В цене уже учтены скидки по: (акциям; купонам; промокодам',
+    # set_column_width(worksheet, 'R', 90) # '_buyerPriceBeforeDiscount':'Стоимость товара в валюте покупателя до применения скидок',
+    # set_column_width(worksheet, 'S', 90) # '_count':'Количество товара',
+    # set_column_width(worksheet, 'T', 90) # '_shopSku':'Ваш SKU',
+    # set_column_width(worksheet, 'U', 90) # '_subsidy':'Общее вознаграждение партнеру от Маркета за все акции Маркета, в которых участвует товар',
+    # set_column_width(worksheet, 'V', 90) # 'delivery.dates.fromDate':'Ближайшая дата доставки',
+    # set_column_width(worksheet, 'W', 90) # 'delivery.shipments':'День, в который нужно отгрузить заказы службе доставки',
+    # set_column_width(worksheet, 'X', 90) # 'subsidies':'Размер субсидии',
 
 
 
+    # body2 = {
+    #     'requests': {
+    #         "autoResizeDimensions": {
+    #             "dimensions": {
+    #                 "sheetId": campaingId[0],
+    #                 "dimension": "ROWS",
+    #             }
+    #         },
+    #     }
+    # }
+    # sh.batch_update(body2)
+
+
+    # results = service.spreadsheets().batchUpdate(spreadsheetId = spreadsheet['spreadsheetId'], body = {
+    # "requests": [
+
+    #     # Задать ширину столбца A: 317 пикселей
+    #     {
+    #     "updateDimensionProperties": {
+    #         "range": {
+    #         "sheetId": 0,
+    #         "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+    #         "startIndex": 0,         # Столбцы нумеруются с нуля
+    #         "endIndex": 1            # startIndex берётся включительно, endIndex - НЕ включительно,
+    #                                 # т.е. размер будет применён к столбцам в диапазоне [0,1), т.е. только к столбцу A
+    #         },
+    #         "properties": {
+    #         "pixelSize": 317     # размер в пикселях
+    #         },
+    #         "fields": "pixelSize"  # нужно задать только pixelSize и не трогать другие параметры столбца
+    #     }
+    #     },
+
+    #     # Задать ширину столбца B: 200 пикселей
+    #     {
+    #     "updateDimensionProperties": {
+    #         "range": {
+    #         "sheetId": 0,
+    #         "dimension": "COLUMNS",
+    #         "startIndex": 1,
+    #         "endIndex": 2
+    #         },
+    #         "properties": {
+    #         "pixelSize": 200
+    #         },
+    #         "fields": "pixelSize"
+    #     }
+    #     },
+
+    #     # Задать ширину столбцов C и D: 165 пикселей
+    #     {
+    #     "updateDimensionProperties": {
+    #         "range": {
+    #         "sheetId": 0,
+    #         "dimension": "COLUMNS",
+    #         "startIndex": 2,
+    #         "endIndex": 4
+    #         },
+    #         "properties": {
+    #         "pixelSize": 165
+    #         },
+    #         "fields": "pixelSize"
+    #     }
+    #     },
+
+    #     # Задать ширину столбца E: 100 пикселей
+    #     {
+    #     "updateDimensionProperties": {
+    #         "range": {
+    #         "sheetId": 0,
+    #         "dimension": "COLUMNS",
+    #         "startIndex": 4,
+    #         "endIndex": 5
+    #         },
+    #         "properties": {
+    #         "pixelSize": 100
+    #         },
+    #         "fields": "pixelSize"
+    #     }
+    #     }
+    # ]
+    # }).execute()
 
 

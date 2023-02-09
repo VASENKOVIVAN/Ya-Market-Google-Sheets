@@ -1,14 +1,13 @@
-need = [
-    'b',
-    'c',
-    'd',
+# body1 = [
+#     { "id": 190010120},
+# ]
 
-]
+# body2 = [
+#     { "id": 190010112},
+# ]
 
-needDrop = [
-    'a',
-    'b',
-]
+for i in range(2, 5):
+    print(i)
 
-result = list(set(need) & set(needDrop))
-print(result)
+# result = body1 + body2
+# print(result)
