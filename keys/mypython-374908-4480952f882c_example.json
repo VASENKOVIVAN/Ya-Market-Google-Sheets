@@ -1,0 +1,12 @@
+{
+  "type": "service_ac...nt",
+  "project_id": "mypython-3....8",
+  "private_key_id": "4480952f88....d7b4e6f7a474",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5qi5Lt9fBHxy0\nv8SRCvMMaXfdcoi+NhyX26cZZfZffuvwR4FE7vJWl76jqBn2vTL3rurZ1T8IFR9H\n5XeLkl8FGxxtHPhWq6qf2aNraul1DQXZ+aHVybQSFG26QYAphncuUuydhljyMdiu\nLXJgNo6YBBHBjGqnnZZjIEx+2jHUPpC5BKq0unHxKXy8s4uCSicnfFnqJZWm1xgn\neONyw4yO1v5qZH3o9v4blFX3L8wUwk33P3ikqOMMRbof8rPRxOU68MSBZXC0XEQI\n/YzvS7fmAbcFbWYYLshkIDlaqfcfkI638x6NWirr9Cx7nyWc5nd7yP7qsnrvnED+\n9mB2PFVJAgMBAAECggEAG6SrSJodD+OaT43Eg4qWI2v0l85nblf6K+CytsUH81yf\nXmLBwXSzijxaUF2aor................JgIKE01a1lZBuuA=\n-----END PRIVATE KEY-----\n",
+  "client_email": "acc-511@mypython-3...account.com",
+  "client_id": "1143681757...2",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/acc-5......ccount.com"
+}
