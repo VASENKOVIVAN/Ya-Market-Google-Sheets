@@ -23,10 +23,10 @@ HEADERS = {
 
 # Массив ['листGS', 'campaingId']
 campaignIdArray = [
-    [263414250, '49039988'],
-    # [339962401, '48371734'],
-    # [1481585305, '48429880'],
-    # [2138399644, '46655497']
+    [263414250, '49039988', 'CWC'],
+    # [1481585305, '48429880', 'LESH'],
+    # [2138399644, '46655497', 'Int']
+    # [355247618, '52087697', 'poc']
 ]
 
 # Пробегаю по каждому магазину и листуGS
@@ -52,14 +52,14 @@ for campaingId in campaignIdArray:
     data = response1['orders']
 
     # Тут цикл в котором я забираю вообще все заказы с маркета
-    if pagesCount > 1:
-        for i in range(2, pagesCount+1):
-            response2 = requests.get(
-                'https://api.partner.market.yandex.ru/v2/campaigns/' + campaingId[1] + '/orders.json?page=' + str(i),
-                headers=HEADERS
-            ).json()
-            # print("ВОТ ЭТО ХУЕТА ",response2)
-            data = data + response2['orders']
+    # if pagesCount > 1:
+    #     for i in range(2, pagesCount+1):
+    #         response2 = requests.get(
+    #             'https://api.partner.market.yandex.ru/v2/campaigns/' + campaingId[1] + '/orders.json?page=' + str(i),
+    #             headers=HEADERS
+    #         ).json()
+    #         # print("ВОТ ЭТО ХУЕТА ",response2)
+    #         data = data + response2['orders']
 
     # ДатаФрейм
     df = pd.json_normalize(
@@ -128,6 +128,55 @@ for campaingId in campaignIdArray:
     for i in range(num_rows):
         df.at[i, 'subsidies'] = get_subsidies_amount(df.at[i, 'subsidies'])
 
+    # Перевод статуса
+    status_db = {
+        "CANCELLED":"CANCELLED (Заказ отменен)",
+        "DELIVERED":"DELIVERED (Заказ получен покупателем)",
+        "DELIVERY":"DELIVERY (Заказ передан в службу доставки)",
+        "PICKUP":"PICKUP (Заказ доставлен в пункт самовывоза)",
+        "PROCESSING":"PROCESSING (Заказ находится в обработке)",
+        "UNPAID":"UNPAID (Заказ оформлен, но еще не оплачен [если выбрана оплата при оформлении])",
+    }
+
+    def get_status_translate(status):
+        try:
+            return status_db[str(status)]
+        except:
+            return status
+
+    for i in range(num_rows):
+        df.at[i, 'status'] = get_status_translate(df.at[i, 'status'])
+
+    # Перевод субстатуса
+    substatus_db = {
+        'STARTED':'STARTED (Заказ подтвержден, его можно начать обрабатывать)',
+        'READY_TO_SHIP':'READY_TO_SHIP (Заказ собран и готов к отправке)',
+        'SHIPPED':'SHIPPED (Заказ передан службе доставки)',
+        'DELIVERY_SERVICE_UNDELIVERED':'DELIVERY_SERVICE_UNDELIVERED (Служба доставки не смогла доставить заказ)',
+        'PROCESSING_EXPIRED':'PROCESSING_EXPIRED (Магазин не обработал заказ в течение семи дней)',
+        'REPLACING_ORDER':'REPLACING_ORDER (Покупатель решил заменить товар другим по собственной инициативе)',
+        'RESERVATION_EXPIRED':'RESERVATION_EXPIRED (Покупатель не завершил оформление зарезервированного заказа в течение 10 минут)',
+        'RESERVATION_FAILED':'RESERVATION_FAILED (Маркет не может продолжить дальнейшую обработку заказа)',
+        'SHOP_FAILED':'SHOP_FAILED (Магазин не может выполнить заказ)',
+        'USER_CHANGED_MIND':'USER_CHANGED_MIND (Покупатель отменил заказ по личным причинам)',
+        'USER_NOT_PAID':'USER_NOT_PAID (Покупатель не оплатил заказ (для типа оплаты PREPAID) в течение 30 минут)',
+        'USER_REFUSED_DELIVERY':'USER_REFUSED_DELIVERY (Покупателя не устроили условия доставки)',
+        'USER_REFUSED_PRODUCT':'USER_REFUSED_PRODUCT (Покупателю не подошел товар)',
+        'USER_REFUSED_QUALITY':'USER_REFUSED_QUALITY (Покупателя не устроило качество товара)',
+        'USER_UNREACHABLE':'USER_UNREACHABLE (Не удалось связаться с покупателем)',
+        'USER_WANTS_TO_CHANGE_DELIVERY_DATE':'USER_WANTS_TO_CHANGE_DELIVERY_DATE (Покупатель хочет получить заказ в другой день)',
+        'CANCELLED_COURIER_NOT_FOUND':'CANCELLED_COURIER_NOT_FOUND (Не удалось найти курьера)',
+    }
+
+    def get_substatus_translate(substatus):
+        try:
+            return substatus_db[str(substatus)]
+        except:
+            return substatus
+
+    for i in range(num_rows):
+        df.at[i, 'substatus'] = get_substatus_translate(df.at[i, 'substatus'])
+
     # Получаю названия колонок из ДФ
     columnInData = list(df.columns.values)
     print("\nВсе колонки в ДФ: \n", columnInData)
@@ -163,10 +212,10 @@ for campaingId in campaignIdArray:
     sh = gc.open_by_url('https://docs.google.com/spreadsheets/d/1Vx9RkLzxtsncULEkd7XsHQgVrcS-dzQSdocZjLp8Uw0/edit#gid=0')
 
     # Очистить лист
-    sh.values_clear("'" + campaingId[1] + "'!A1:Z")
+    sh.values_clear("'" + campaingId[2] + "'!A1:X")
 
     # Лист, в который вставляем
-    worksheet = sh.worksheet(campaingId[1])
+    worksheet = sh.worksheet(campaingId[2])
 
     # Меняем колонки местами
     df_new = df
