@@ -374,7 +374,7 @@ for campaingId in campaignIdArray:
             '_offerName': 'Название товара',
             '_buyerPrice': 'Цена товара в валюте покупателя. В цене уже учтены скидки по: (акциям; купонам; промокодам',
             '_buyerPriceBeforeDiscount': 'Стоимость товара в валюте покупателя до применения скидок',
-            '_count': 'Количество товара',
+            '_count': 'Кол-во товара',
             '_shopSku': 'Ваш SKU',
             '_subsidy': 'Общее вознаграждение партнеру от Маркета за все акции Маркета, в которых участвует товар',
             'delivery.dates.fromDate': 'Ближайшая дата доставки',
@@ -408,19 +408,20 @@ for campaingId in campaignIdArray:
     #                 pushToGSImages.append('')
     #         # pushToGSImages.append('')
     #     print('======================Ищу это: ', pushToGSImages)
-    pushToGSImages = []
-    for i in range(2, len(SKUArr)+2):
-        # pushToGSImages.append(
-        #     f"=IMAGE(VLOOKUP(F{i};'SKU от Виталия'!A:F;6;0);4;80;80)")
-        pushToGSImages.append(f"=if(VLOOKUP(F{i};" + "'" + "SKU от Виталия" + "'" +
-                              f'!A:F;6;0)="";CONCATENATE("😨";CHAR(10);"Картинки нет");IMAGE(VLOOKUP(F{i};' + "'" + "SKU от Виталия" + "'" + "!A:F;6;0);4;80;80))")
-    df_new["Картинка"] = pushToGSImages
+    columnImage = []
+    columnGroup = []
+    columnUpdateStatus = []
 
-    pushToGSGroup = []
     for i in range(2, len(SKUArr)+2):
-        pushToGSGroup.append(
+        columnImage.append(f"=if(VLOOKUP(F{i};" + "'" + "SKU от Виталия" + "'" +
+                           f'!A:F;6;0)="";CONCATENATE("😨";CHAR(10);"Картинки нет");IMAGE(VLOOKUP(F{i};' + "'" + "SKU от Виталия" + "'" + "!A:F;6;0);4;80;80))")
+        columnGroup.append(
             f"=VLOOKUP(F{i};'SKU от Виталия'!A:B;2;0)")
-    df_new["Группа"] = pushToGSGroup
+        columnUpdateStatus.append('')
+
+    df_new['Картинка'] = columnImage
+    df_new['Группа'] = columnGroup
+    df_new['Обновленный статус заказа'] = columnUpdateStatus
 
     # # Меняем колонки местами
     # df_new = pd.DataFrame(
@@ -469,6 +470,7 @@ for campaingId in campaignIdArray:
     format_cell_range(worksheet, 'F2:F', formatCenter)
     format_cell_range(worksheet, 'G2:G', formatCenter)
     format_cell_range(worksheet, 'H2:H', formatCenter)
+    format_cell_range(worksheet, 'I2:I', formatCenter)
     format_cell_range(worksheet, 'I2:I', formatCenter)
 
     # Переменная со стилями для строки заголовков
@@ -543,7 +545,7 @@ for campaingId in campaignIdArray:
                             "endIndex": 5            # startIndex берётся включительно, endIndex - НЕ включительно,
                         },
                         "properties": {
-                            "pixelSize": 110     # размер в пикселях
+                            "pixelSize": 75     # размер в пикселях
                         },
                         # нужно задать только pixelSize и не трогать другие параметры столбца
                         "fields": "pixelSize"
@@ -592,6 +594,22 @@ for campaingId in campaignIdArray:
                         },
                         "properties": {
                             "pixelSize": 95     # размер в пикселях
+                        },
+                        # нужно задать только pixelSize и не трогать другие параметры столбца
+                        "fields": "pixelSize"
+                    },
+                },
+                # Обновленный статус заказа
+                {
+                    "updateDimensionProperties": {
+                        "range": {
+                            "sheetId": campaingId[0],
+                            "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+                            "startIndex": 9,         # Столбцы нумеруются с нуля
+                            "endIndex": 10           # startIndex берётся включительно, endIndex - НЕ включительно,
+                        },
+                        "properties": {
+                            "pixelSize": 150     # размер в пикселях
                         },
                         # нужно задать только pixelSize и не трогать другие параметры столбца
                         "fields": "pixelSize"

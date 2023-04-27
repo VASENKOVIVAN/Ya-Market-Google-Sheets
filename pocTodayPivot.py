@@ -31,7 +31,7 @@ print("\nТАБЛИЦА СО SKU ИЗ ГУГЛА")
 df = df_sheet_sku_data_base
 
 df_pivot = df.pivot_table(
-    values=["Количество товара"],
+    values=["Кол-во товара"],
     index=['Группа', 'Ваш SKU', 'Название товара'],
     aggfunc=np.sum
 ).reset_index()
@@ -42,17 +42,33 @@ print(df_pivot.head(100))
 SKUArr = list(df_pivot.iloc[:, 2])
 print(len(SKUArr))
 
-imageArr = []
+columnImage = []
+columnOrdered = []
+columnPayed = []
+columnGetted = []
+columnSeller = []
+columnAreAvailable = []
+columnNeedOrdered = []
+
+
 for i in range(2, len(SKUArr)+2):
-    imageArr.append(f"=if(VLOOKUP(D{i};" + "'" + "SKU от Виталия" + "'" +
-                    f'!A:F;6;0)="";CONCATENATE("😨";CHAR(10);"Картинки нет");IMAGE(VLOOKUP(D{i};' + "'" + "SKU от Виталия" + "'" + "!A:F;6;0);4;80;80))")
-df_pivot["Картинка"] = imageArr
+    columnImage.append(f"=if(VLOOKUP(D{i};" + "'" + "SKU от Виталия" + "'" +
+                       f'!A:F;6;0)="";CONCATENATE("😨";CHAR(10);"Картинки нет");IMAGE(VLOOKUP(D{i};' + "'" + "SKU от Виталия" + "'" + "!A:F;6;0);4;80;80))")
+    columnOrdered.append('False')
+    columnPayed.append('False')
+    columnGetted.append('False')
+    columnSeller.append('-')
+    columnAreAvailable.append('')
+    columnNeedOrdered.append(f'=C{i}-J{i}')
 
 
-df_pivot["Заказал"] = ["FALSE" for i in range(2, len(SKUArr)+2)]
-df_pivot["Оплатил"] = ["FALSE" for i in range(2, len(SKUArr)+2)]
-df_pivot["Забрал"] = ["FALSE" for i in range(2, len(SKUArr)+2)]
-df_pivot["Поставщик"] = ["-" for i in range(2, len(SKUArr)+2)]
+df_pivot["Картинка"] = columnImage
+df_pivot["Заказал"] = columnOrdered
+df_pivot["Оплатил"] = columnPayed
+df_pivot["Забрал"] = columnGetted
+df_pivot["Поставщик"] = columnSeller
+df_pivot["Есть в наличии"] = columnAreAvailable
+df_pivot["НУЖНО ЗАКАЗАТЬ (кол-во шт.)"] = columnNeedOrdered
 
 
 # Меняем колонки местами
@@ -60,14 +76,16 @@ df_pivot = pd.DataFrame(
     df_pivot,
     columns=[
         'Группа',
-        'Картинка',
         'Название товара',
+        'Кол-во товара',
         'Ваш SKU',
-        'Количество товара',
+        'Картинка',
         'Заказал',
         'Оплатил',
         'Забрал',
-        'Поставщик'
+        'Поставщик',
+        'Есть в наличии',
+        'НУЖНО ЗАКАЗАТЬ (кол-во шт.)'
     ]
 )
 
@@ -75,7 +93,8 @@ worksheetpush = sh.worksheet('poc-today-pivot')
 
 # Очистить лист
 sh.values_clear('poc-today-pivot!A1:E')
-sh.values_clear('poc-today-pivot!I1:I')
+sh.values_clear('poc-today-pivot!I1:K')
+
 
 # Заливаем DataFrame в гугл таблицу
 set_with_dataframe(worksheetpush, df_pivot)
@@ -91,7 +110,6 @@ formatBottomWrapLeft = gsf.cellFormat(
     verticalAlignment='MIDDLE',
     horizontalAlignment='LEFT'
 )
-format_cell_range(worksheetpush, 'C2:C', formatBottomWrapLeft)
 
 formatCenter = gsf.cellFormat(
     wrapStrategy='WRAP',
@@ -99,13 +117,17 @@ formatCenter = gsf.cellFormat(
     horizontalAlignment='CENTER'
 )
 format_cell_range(worksheetpush, 'A2:A', formatCenter)
-format_cell_range(worksheetpush, 'B2:B', formatCenter)
+format_cell_range(worksheetpush, 'B2:B', formatBottomWrapLeft)
+format_cell_range(worksheetpush, 'C2:C', formatCenter)
 format_cell_range(worksheetpush, 'D2:D', formatCenter)
 format_cell_range(worksheetpush, 'E2:E', formatCenter)
 format_cell_range(worksheetpush, 'F2:F', formatCenter)
 format_cell_range(worksheetpush, 'G2:G', formatCenter)
 format_cell_range(worksheetpush, 'H2:H', formatCenter)
 format_cell_range(worksheetpush, 'I2:I', formatCenter)
+format_cell_range(worksheetpush, 'J2:J', formatCenter)
+format_cell_range(worksheetpush, 'K2:K', formatCenter)
+
 
 # Переменная со стилями для строки заголовков
 fmt = gsf.cellFormat(
@@ -130,7 +152,7 @@ body = {
                         "sheetId": sheetId_poc_today_pivot,
                         "dimension": "COLUMNS",  # COLUMNS - потому что столбец
                         "startIndex": 0,         # Столбцы нумеруются с нуля
-                        "endIndex": 2            # startIndex берётся включительно, endIndex - НЕ включительно,
+                        "endIndex": 1            # startIndex берётся включительно, endIndex - НЕ включительно,
                     },
                     "properties": {
                         "pixelSize": 95     # размер в пикселях
@@ -145,11 +167,27 @@ body = {
                     "range": {
                         "sheetId": sheetId_poc_today_pivot,
                         "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+                        "startIndex": 1,         # Столбцы нумеруются с нуля
+                        "endIndex": 2            # startIndex берётся включительно, endIndex - НЕ включительно,
+                    },
+                    "properties": {
+                        "pixelSize": 300     # размер в пикселях
+                    },
+                    # нужно задать только pixelSize и не трогать другие параметры столбца
+                    "fields": "pixelSize"
+                },
+            },
+            # Количество товара
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": sheetId_poc_today_pivot,
+                        "dimension": "COLUMNS",  # COLUMNS - потому что столбец
                         "startIndex": 2,         # Столбцы нумеруются с нуля
                         "endIndex": 3            # startIndex берётся включительно, endIndex - НЕ включительно,
                     },
                     "properties": {
-                        "pixelSize": 300     # размер в пикселях
+                        "pixelSize": 75     # размер в пикселях
                     },
                     # нужно задать только pixelSize и не трогать другие параметры столбца
                     "fields": "pixelSize"
@@ -171,7 +209,7 @@ body = {
                     "fields": "pixelSize"
                 },
             },
-            # Количество товара
+            # Картинка
             {
                 "updateDimensionProperties": {
                     "range": {
@@ -181,7 +219,7 @@ body = {
                         "endIndex": 5            # startIndex берётся включительно, endIndex - НЕ включительно,
                     },
                     "properties": {
-                        "pixelSize": 110     # размер в пикселях
+                        "pixelSize": 95     # размер в пикселях
                     },
                     # нужно задать только pixelSize и не трогать другие параметры столбца
                     "fields": "pixelSize"
@@ -214,6 +252,38 @@ body = {
                     },
                     "properties": {
                         "pixelSize": 150     # размер в пикселях
+                    },
+                    # нужно задать только pixelSize и не трогать другие параметры столбца
+                    "fields": "pixelSize"
+                },
+            },
+            # Есть в наличии
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": sheetId_poc_today_pivot,
+                        "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+                        "startIndex": 9,         # Столбцы нумеруются с нуля
+                        "endIndex": 10            # startIndex берётся включительно, endIndex - НЕ включительно,
+                    },
+                    "properties": {
+                        "pixelSize": 86     # размер в пикселях
+                    },
+                    # нужно задать только pixelSize и не трогать другие параметры столбца
+                    "fields": "pixelSize"
+                },
+            },
+            # НУЖНО ЗАКАЗАТЬ (кол-во шт.)
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": sheetId_poc_today_pivot,
+                        "dimension": "COLUMNS",  # COLUMNS - потому что столбец
+                        "startIndex": 10,         # Столбцы нумеруются с нуля
+                        "endIndex": 11            # startIndex берётся включительно, endIndex - НЕ включительно,
+                    },
+                    "properties": {
+                        "pixelSize": 105     # размер в пикселях
                     },
                     # нужно задать только pixelSize и не трогать другие параметры столбца
                     "fields": "pixelSize"
