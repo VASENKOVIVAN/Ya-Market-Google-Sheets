@@ -57,7 +57,7 @@ for i in range(2, len(SKUArr)+2):
     columnOrdered.append('False')
     columnPayed.append('False')
     columnGetted.append('False')
-    columnSeller.append('-')
+    columnSeller.append('Не указан')
     columnAreAvailable.append('')
     columnNeedOrdered.append(f'=C{i}-J{i}')
 

@@ -14,6 +14,16 @@ from keys.keys import oauth_token, oauth_client_id
 from datetime import datetime, timedelta
 import numpy as np
 
+import requests
+
+
+campaignIdArray = [
+    # [263414250, '49039988', 'CWC'],
+    # [1481585305, '48429880', 'LESH'],
+    # [2138399644, '46655497', 'Int'],
+    [1157524177, '52087697', 'poc-today']
+]
+
 # Указываем путь к JSON
 gc = gspread.service_account(filename='keys/mypython-374908-4480952f882c.json')
 
@@ -62,7 +72,7 @@ HEADERS = {
 response1 = requests.get(
     'https://api.partner.market.yandex.ru/v2/campaigns/' + '52087697' +
     '/orders.json?page=1&supplierShipmentDateFrom=' +
-    date_today + '&supplierShipmentDateTo=' + date_today + '&status=PROCESSING',
+    date_today + '&supplierShipmentDateTo=' + date_today,
     headers=HEADERS
 ).json()
 print("\nВсего заказов: ", response1['pager']['total'])
@@ -164,6 +174,40 @@ arrSkuExist.insert(
 dfActualForGS = pd.DataFrame(arrSkuExist)
 
 print(dfActualForGS)
-
+# Очистить лист
+sh.values_clear("'" + campaignIdArray[0][2] + "'!J1:J")
 set_with_dataframe(worksheet, dfActualForGS,
                    include_column_header=False, col=10, row=1)
+
+
+worksheet2 = sh.worksheet('poc-today')
+
+valuesIdOffer = worksheet2.col_values(1)
+valuesNames = worksheet2.col_values(4)
+valuesCount = worksheet2.col_values(5)
+valuesSku = worksheet2.col_values(6)
+valuesFreshStatus = worksheet2.col_values(10)
+
+allOrders = list(zip(valuesNames, valuesCount, valuesSku,
+                 valuesFreshStatus, valuesIdOffer))
+
+ordersCancelled = []
+
+for i in allOrders[1:]:
+    if i[3] != 'PROCESSING':
+        ordersCancelled.append(i)
+
+if not ordersCancelled:
+    message = "✅ Отмененных заказов сегодня нет"
+else:
+    message = "❌ Отмененные заказы сегодня:\n\n" + \
+        '\n\n'.join([f'Номер заказа: {i[4]}' + '\n1️⃣ ' + i[3] + '\n2️⃣ ' + i[0] + '\n3️⃣ ' +
+                     i[2] + '\n4️⃣ ' + i[1] + ' шт.' for i in ordersCancelled])
+
+print(ordersCancelled)
+
+
+TOKEN = "6157124843:AAGf3oET2gja01Vgxg9n7n6a6UxR1SUAK4M"
+chat_id = "-933813412"
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+print(requests.get(url).json())  # Эта строка отсылает сообщение
